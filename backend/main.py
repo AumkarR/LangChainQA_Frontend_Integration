@@ -1,11 +1,12 @@
 from dotenv import load_dotenv #Loading .env file containing private OpenAI's API Key
-from langchain.document_loaders import DirectoryLoader #Importing DirectoryLoader which allows importing all contents withint a folder into a database
+from langchain_community.document_loaders import DirectoryLoader #Importing DirectoryLoader which allows importing all contents withint a folder into a database
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import Chroma #Importing Chroma, a vectorstore that is able to chunk similar data together; Any other vectorstores found on https://python.langchain.com/en/latest/modules/indexes/vectorstores.html?highlight=vectorstores
+from langchain_community.vectorstores import Chroma #Importing Chroma, a vectorstore that is able to chunk similar data together; Any other vectorstores found on https://python.langchain.com/en/latest/modules/indexes/vectorstores.html?highlight=vectorstores
 from langchain.chains import RetrievalQA #Importing the RetrievalQA module from Langchain to initiate a retrieval question/answering mechanism
-from langchain import OpenAI #I will be using an OpenAI model for the LLM of choice since I am most familiar with it, but any LLM can be used from this list: https://python.langchain.com/en/latest/modules/models/llms/integrations.html
-from langchain.embeddings import OpenAIEmbeddings #Importing the embedding library to ensure that the ChromaDB is able to cluster similar data
+from langchain_openai import OpenAI #I will be using an OpenAI model for the LLM of choice since I am most familiar with it, but any LLM can be used from this list: https://python.langchain.com/en/latest/modules/models/llms/integrations.html
+from langchain_openai import OpenAIEmbeddings #Importing the embedding library to ensure that the ChromaDB is able to cluster similar data
 import chromadb #Importing ChromaDB to access the settings option to store the database into a local folder
+
 
 load_dotenv() #Loading the .env file into the working document
 
