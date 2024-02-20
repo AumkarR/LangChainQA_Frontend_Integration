@@ -81,6 +81,18 @@ def extract_name_and_description(urls_array):
     with open('url_data.json', 'w') as file:
         json.dump(url_data, file, indent=4)
 
+    # # Save URL data to a TXT file
+    # with open('url_data.txt', 'w') as txt_file:
+    #     for item in url_data:
+    #         txt_file.write(f"URL: {item['url']}\n")
+    #         txt_file.write(f"Title: {item['title']}\n")
+    #         txt_file.write(f"Description: {item['description']}\n")
+    #         txt_file.write("Links:\n")
+    #         for link in item['links']:
+    #             txt_file.write(f"    {link}\n")
+    #         txt_file.write("\n")  # Add a blank line between entries for readability
+
+
 if __name__ == "__main__":
 
     # EXTRACTING URLS

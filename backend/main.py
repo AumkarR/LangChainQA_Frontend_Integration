@@ -1,33 +1,54 @@
-from dotenv import load_dotenv #Loading .env file containing private OpenAI's API Key
-from langchain_community.document_loaders import DirectoryLoader #Importing DirectoryLoader which allows importing all contents withint a folder into a database
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.vectorstores import Chroma #Importing Chroma, a vectorstore that is able to chunk similar data together; Any other vectorstores found on https://python.langchain.com/en/latest/modules/indexes/vectorstores.html?highlight=vectorstores
-from langchain.chains import RetrievalQA #Importing the RetrievalQA module from Langchain to initiate a retrieval question/answering mechanism
-from langchain_openai import OpenAI #I will be using an OpenAI model for the LLM of choice since I am most familiar with it, but any LLM can be used from this list: https://python.langchain.com/en/latest/modules/models/llms/integrations.html
-from langchain_openai import OpenAIEmbeddings #Importing the embedding library to ensure that the ChromaDB is able to cluster similar data
-import chromadb #Importing ChromaDB to access the settings option to store the database into a local folder
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+import json
+import numpy as np
+import faiss
+from dotenv import load_dotenv
 
+load_dotenv()
 
-load_dotenv() #Loading the .env file into the working document
+# Load documents from a JSON file
+def load_documents_from_json(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    documents = [f"{item['title']} {item['description']} {' '.join(item['links'])}" for item in data]
+    return documents
 
-loader = DirectoryLoader('product_information', glob="**/*.html") #Product Information contains the HTML files generated from the scraping.py file
+# Convert documents to embeddings and create a FAISS index
+def create_faiss_index_from_docs(docs):
+    embeddings_model = OpenAIEmbeddings()
+    doc_embeddings = np.vstack([embeddings_model.embed_query(doc) for doc in docs])
+    d = doc_embeddings.shape[1]  # Dimension of embeddings
+    index = faiss.IndexFlatL2(d)  # Using L2 distance
+    index.add(doc_embeddings)
+    return index
 
-documents = loader.load() #The load function is used to generate a documents variable
+# Main function to execute RAG with sources
+def execute_rag_with_sources(file_path, user_input_question):
+    llm = ChatOpenAI()
+    docs = load_documents_from_json(file_path)  # Load documents
+    faiss_index = create_faiss_index_from_docs(docs)  # Create FAISS index from documents
+    
+    # Embed the user query
+    embeddings_model = OpenAIEmbeddings()
+    query_embedding = embeddings_model.embed_query(user_input_question)
+    query_embedding = np.array(query_embedding).reshape(1, -1)  # Reshape for FAISS
+    
+    # Find the most similar document(s)
+    D, I = faiss_index.search(query_embedding, 1)  # Search for the most similar document; adjust as needed
+    
+    # Assuming you have a method to generate a response based on the most relevant document
+    most_relevant_doc_index = I[0][0]
+    most_relevant_doc = docs[most_relevant_doc_index]
+    print(f"Most relevant document: {most_relevant_doc}")
+    
+    # Generate a response based on the most relevant document (simplified example)
+    # Here, you'd use your LLM or another method to generate an answer based on the document
+    answer = f"Based on the document: {most_relevant_doc}"
+    return answer
 
-text_splitter = CharacterTextSplitter(chunk_size = 1000, chunk_overlap = 0) #Importing a text splitter to create chunks of text that can be stored into a database through embeddings
-texts = text_splitter.split_documents(documents)
-
-embeddings = OpenAIEmbeddings()
-
-vectorstore = Chroma.from_documents(texts, embeddings, persist_directory="db_files") #Storing all of the split texts into the Chroma database, which are grouped according to their embeddings into db_files
-
-qa = RetrievalQA.from_chain_type ( #Using the RetrievalQA module to choose the LLM, chain_type and retriever of choice
-    llm = OpenAI(),
-    chain_type = "stuff", #Stuff was used as the chain_type here, but any chain type from https://python.langchain.com/en/latest/modules/chains/index_examples/qa_with_sources.html#the-stuff-chain can be used as per the requirements
-    retriever = vectorstore.as_retriever() #The Chroma vectorstore that we generated is retrieved for question/answering
-)
-
-def query(q): #A query function is defined to take user's input query and return the answer based on the question/answering logic contained above
-    return qa.run(q)
-
-# print(query("tell me about Technicolor floral top"))
+# Example usage
+if __name__ == "__main__":
+    file_path = "url_data.json"  # Update this to your JSON file path
+    user_input_question = "What is ActBlue"  # Your query
+    answer = execute_rag_with_sources(file_path, user_input_question)
+    print(answer)

@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify #Importing Flask to setup the backend; Importing request and jsonify to send a response when a post query is called
-from main import query #Importing the query() function defined in main.py for returning a response
+from backend.main_old import query #Importing the query() function defined in main.py for returning a response
 from flask_cors import CORS #Importing CORS to ensure that cross-origin requests are handled
 
 app = Flask(__name__) #Creating a flask app, and allowing CORS to allow all connections
